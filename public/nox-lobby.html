@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>NOX — UNO Lobby · CHAOS-7X2K</title>
+  <link rel="stylesheet" href="nox-shared.css"/>
+  <style>
+    body { min-height:100vh; }
+
+    .lobby-wrap { display:grid; grid-template-columns:1fr 340px; gap:0; min-height:calc(100vh - 66px); }
+
+    /* LEFT PANEL */
+    .lobby-main { padding:36px 40px; border-right:2px solid var(--ink); position:relative; overflow:hidden; }
+
+    /* Doodle background pattern */
+    .lobby-main::before {
+      content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(190,255,60,.06) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(159,143,255,.06) 0%, transparent 50%);
+    }
+
+    .lobby-header { position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px; }
+    .lobby-title-row { display:flex;align-items:center;gap:16px; }
+    .lobby-game-emoji { font-size:44px; }
+    .lobby-game-name { font-family:'Instrument Serif',serif;font-style:italic;font-size:42px;line-height:1; }
+    .lobby-room-code { font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;padding:6px 14px;background:var(--ink);color:white;border-radius:var(--radius-pill);letter-spacing:.1em;cursor:pointer;transition:.15s;user-select:all;position:relative; }
+    .lobby-room-code:hover { background:#2d3228; }
+    .copied-toast { position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:var(--lime);color:var(--ink);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;white-space:nowrap;opacity:0;transition:.2s; }
+    .lobby-room-code.copied .copied-toast { opacity:1; }
+
+    /* Status banner */
+    .lobby-status { display:flex;align-items:center;gap:10px;padding:10px 16px;background:rgba(190,255,60,.12);border:1.5px solid var(--lime-dk);border-radius:var(--radius-sm);margin-bottom:28px;position:relative;z-index:1; }
+    .lobby-status-txt { font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--lime-dk); }
+
+    /* Player Slots */
+    .slots-label { font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:14px;position:relative;z-index:1; }
+    .slots-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;position:relative;z-index:1; }
+
+    .player-slot { background:var(--white);border:2px solid var(--ink);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:18px;text-align:center;transition:.2s; }
+    .player-slot:hover { transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink); }
+    .player-slot.empty { border-style:dashed;border-color:rgba(20,24,16,.3);box-shadow:none;animation:empty-pulse 2s ease-in-out infinite;background:rgba(20,24,16,.02); }
+    .player-slot.empty:hover { transform:none;box-shadow:none; }
+    @keyframes empty-pulse { 0%,100%{opacity:1} 50%{opacity:.65} }
+    .player-slot.host { border-color:var(--lime-dk);box-shadow:4px 4px 0 var(--lime-dk); }
+
+    .slot-avatar { font-size:40px;display:block;margin-bottom:10px; }
+    .slot-empty-icon { font-size:28px;opacity:.3;display:block;margin-bottom:8px; }
+    .slot-name { font-weight:700;font-size:14px;margin-bottom:4px; }
+    .slot-name.empty-label { color:var(--ink-mute);font-weight:500;font-size:13px;font-family:'Caveat',cursive;font-size:16px; }
+    .slot-badge { display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:9px;font-weight:700;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.05em; }
+    .slot-badge.host-badge { background:var(--lime);border:1.5px solid var(--lime-dk);color:var(--ink); }
+    .slot-badge.ready { background:rgba(34,197,94,.15);border:1.5px solid #22c55e;color:#16a34a; }
+    .slot-badge.waiting { background:rgba(20,24,16,.07);color:var(--ink-mute); }
+    .slot-level { font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-mute);margin-top:4px; }
+
+    /* Chat */
+    .chat-section { position:relative;z-index:1; }
+    .chat-box { background:var(--white);border:2px solid var(--ink);border-radius:var(--radius);box-shadow:var(--card-shadow);overflow:hidden; }
+    .chat-header { padding:12px 16px;border-bottom:1.5px solid rgba(20,24,16,.1);display:flex;align-items:center;justify-content:space-between; }
+    .chat-header-title { font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px; }
+    .chat-messages { height:160px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px; }
+    .chat-msg { display:flex;gap:8px;align-items:flex-start; }
+    .chat-av { font-size:16px;flex-shrink:0; }
+    .chat-content {}
+    .chat-user { font-weight:700;font-size:11px;margin-bottom:2px; }
+    .chat-text { font-size:12px;color:var(--ink-mid);line-height:1.4; }
+    .chat-input-row { display:flex;border-top:1.5px solid rgba(20,24,16,.1); }
+    .chat-input { flex:1;padding:10px 14px;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;background:transparent; }
+    .chat-send { padding:10px 16px;background:var(--lime);border:none;font-weight:700;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;border-left:1.5px solid rgba(20,24,16,.1); }
+    .chat-send:hover { background:var(--lime-dk);color:white; }
+
+    /* RIGHT PANEL */
+    .lobby-right { padding:36px 28px;background:var(--white);display:flex;flex-direction:column;gap:24px; }
+
+    /* Game settings */
+    .settings-card { background:var(--bg);border:2px solid var(--ink);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:20px; }
+    .settings-title { font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;margin-bottom:16px; }
+    .setting-row { display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(20,24,16,.08); }
+    .setting-row:last-child { border-bottom:none; }
+    .setting-label { font-size:13px;font-weight:500;color:var(--ink-mid); }
+    .setting-val { font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;background:var(--white);border:1.5px solid rgba(20,24,16,.15);padding:4px 10px;border-radius:var(--radius-sm); }
+
+    /* Voice Chat */
+    .voice-card { background:var(--lav-lt);border:2px solid var(--lav);border-radius:var(--radius);padding:20px; }
+    .voice-title { font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;margin-bottom:14px;display:flex;align-items:center;gap:8px; }
+    .waveform { display:flex;align-items:center;gap:3px;height:36px;margin-bottom:12px; }
+    .wbar { width:4px;background:var(--lav);border-radius:2px;animation:wave-anim 1s ease-in-out infinite; }
+    @keyframes wave-anim { 0%,100%{height:8px} 50%{height:var(--h,24px)} }
+    .voice-users { display:flex;flex-direction:column;gap:6px; }
+    .voice-user { display:flex;align-items:center;gap:8px; }
+    .voice-av { font-size:20px; }
+    .voice-name { font-size:12px;font-weight:600;flex:1; }
+    .voice-indicator { display:flex;gap:2px;align-items:center; }
+    .voice-bar { width:3px;border-radius:2px;background:var(--lav);animation:wave-anim 0.8s ease-in-out infinite; }
+
+    /* Spectators */
+    .spec-card { background:var(--bg);border:1.5px dashed rgba(20,24,16,.2);border-radius:var(--radius);padding:16px; }
+    .spec-title { font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:10px; }
+    .spec-avatars { display:flex;flex-wrap:wrap;gap:6px; }
+    .spec-av { font-size:22px;cursor:default; }
+
+    /* BOTTOM BAR */
+    .lobby-bottom { position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--white);border-top:2px solid var(--ink);padding:14px 40px;display:flex;align-items:center;justify-content:space-between; }
+    .countdown-display { display:flex;align-items:center;gap:12px; }
+    .countdown-label { font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.1em; }
+    .countdown-num-big { font-family:'Instrument Serif',serif;font-style:italic;font-size:36px;line-height:1;color:var(--coral); }
+    .lobby-bottom-btns { display:flex;gap:12px; }
+  </style>
+</head>
+<body>
+
+<nav class="nox-nav">
+  <a href="nox.html" class="nav-logo">NO<span class="logo-x">X</span><span class="logo-doodle">!</span></a>
+  <ul class="nav-links">
+    <li><a href="nox-dashboard.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.5L7 1.5l5.5 4V13H9V9.5H5V13H1.5V5.5z"/></svg>Home</a></li>
+    <li><a href="nox-games.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1.5" y="4.5" width="11" height="7" rx="1.5"/><path d="M9 4.5V3a2 2 0 0 0-4 0v1.5M5 8h1.5M6.5 8V9.5M9.5 8h1"/></svg>Games</a></li>
+    <li><a href="nox-lobby.html" class="active"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5.5 5.5L9.5 7 5.5 8.5V5.5z" fill="currentColor" stroke="none"/></svg>Lobby</a></li>
+    <li><a href="nox-leaderboard.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5l1.2 2.8 3 .3-2.2 2 .7 3L7 8.2 4.3 9.6l.7-3L2.8 4.6l3-.3z"/></svg>Leaderboard</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="online-pill"><span class="pulse-green"></span><span>847 online</span></div>
+    <a href="nox-profile.html" class="btn btn-outline" style="padding:7px 16px;font-size:12px;">😈 Ravenous_404</a>
+  </div>
+</nav>
+
+<!-- Doodle decorations scattered -->
+<div class="doodle" style="position:fixed;top:120px;right:380px;font-size:28px;color:var(--lav);opacity:.3;--r:20deg;z-index:1;pointer-events:none;">★</div>
+<div class="doodle" style="position:fixed;top:300px;left:30px;font-size:18px;color:var(--coral);opacity:.3;--r:-15deg;animation-delay:.5s;z-index:1;pointer-events:none;font-family:'Caveat',cursive;">get ready!</div>
+<svg style="position:fixed;bottom:100px;right:360px;pointer-events:none;opacity:.07;z-index:1;" width="120" height="100" viewBox="0 0 120 100">
+  <path d="M10 50 Q30 10 60 50 Q90 90 110 50" stroke="#141810" stroke-width="2.5" stroke-linecap="round" fill="none" stroke-dasharray="6 8"/>
+</svg>
+
+<div class="lobby-wrap" style="margin-bottom:74px;">
+
+  <!-- ── LEFT ── -->
+  <div class="lobby-main">
+
+    <div class="lobby-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+          <div class="lobby-title-row">
+            <span class="lobby-game-emoji">🃏</span>
+            <span class="lobby-game-name">UNO</span>
+          </div>
+          <div class="lobby-room-code" id="roomCode" onclick="copyCode(this)">
+            CHAOS-7X2K
+            <span class="copied-toast">Copied!</span>
+          </div>
+        </div>
+        <div class="lobby-status">
+          <span class="pulse-green"></span>
+          <span class="lobby-status-txt">Waiting for players · 4 / 6 joined</span>
+          <span style="font-family:'Caveat',cursive;font-size:14px;color:var(--lime-dk);margin-left:8px;">share the code!</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+        <a href="nox-games.html" class="btn btn-outline" style="font-size:12px;padding:7px 14px;">← Back to Games</a>
+        <button class="btn btn-outline" style="font-size:12px;padding:7px 14px;" onclick="inviteFriends()">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="4" cy="4" r="2"/><path d="M1 11v-1a3 3 0 0 1 6 0v1"/><path d="M9 4v4M11 6H9"/></svg>
+          Invite Friends
+        </button>
+      </div>
+    </div>
+
+    <!-- Player Slots -->
+    <div class="slots-label">06 PLAYER SLOTS</div>
+    <div class="slots-grid">
+      <!-- Slot 1 - Host -->
+      <div class="player-slot host">
+        <span class="slot-avatar">😈</span>
+        <div class="slot-name">Ravenous_404</div>
+        <span class="slot-badge host-badge">👑 Host</span>
+        <div class="slot-level">Lv. 23 · 847 wins</div>
+      </div>
+      <!-- Slot 2 -->
+      <div class="player-slot">
+        <span class="slot-avatar">🦊</span>
+        <div class="slot-name">chaos.exe</div>
+        <span class="slot-badge ready"><span class="pulse-green" style="width:5px;height:5px;"></span>Ready</span>
+        <div class="slot-level">Lv. 47 · 2,341 wins</div>
+      </div>
+      <!-- Slot 3 -->
+      <div class="player-slot">
+        <span class="slot-avatar">🐺</span>
+        <div class="slot-name">nxght_owl</div>
+        <span class="slot-badge ready"><span class="pulse-green" style="width:5px;height:5px;"></span>Ready</span>
+        <div class="slot-level">Lv. 62 · 4,121 wins</div>
+      </div>
+      <!-- Slot 4 -->
+      <div class="player-slot">
+        <span class="slot-avatar">🌙</span>
+        <div class="slot-name">pixel_witch</div>
+        <span class="slot-badge waiting">Not Ready</span>
+        <div class="slot-level">Lv. 31 · 1,203 wins</div>
+      </div>
+      <!-- Slot 5 Empty -->
+      <div class="player-slot empty">
+        <span class="slot-empty-icon">+</span>
+        <div class="slot-name empty-label">Waiting...</div>
+        <span class="slot-badge waiting" style="opacity:.5;">Empty</span>
+      </div>
+      <!-- Slot 6 Empty -->
+      <div class="player-slot empty">
+        <span class="slot-empty-icon">+</span>
+        <div class="slot-name empty-label">Waiting...</div>
+        <span class="slot-badge waiting" style="opacity:.5;">Empty</span>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-section">
+      <div class="slots-label">ROOM CHAT</div>
+      <div class="chat-box">
+        <div class="chat-header">
+          <div class="chat-header-title">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M11 7.5a1.5 1.5 0 0 1-1.5 1.5H3.5l-2 2V2.5A1.5 1.5 0 0 1 3 1h7A1.5 1.5 0 0 1 11.5 2.5v5Z"/></svg>
+            Live Chat
+          </div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-mute);">4 online</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-msg"><span class="chat-av">🦊</span><div class="chat-content"><div class="chat-user">chaos.exe</div><div class="chat-text">let's gooo finally a full game 🃏</div></div></div>
+          <div class="chat-msg"><span class="chat-av">🐺</span><div class="chat-content"><div class="chat-user">nxght_owl</div><div class="chat-text">I'm going to destroy all of you. Just saying.</div></div></div>
+          <div class="chat-msg"><span class="chat-av">😈</span><div class="chat-content"><div class="chat-user" style="color:var(--lime-dk);">Ravenous_404 (you)</div><div class="chat-text">bold words for someone with a -4 card in my hand 😈</div></div></div>
+          <div class="chat-msg"><span class="chat-av">🌙</span><div class="chat-content"><div class="chat-user">pixel_witch</div><div class="chat-text">why is everyone always targeting me 😭</div></div></div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" placeholder="say something chaotic..." id="chatInput" onkeydown="sendChat(event)"/>
+          <button class="chat-send" onclick="sendChat({key:'Enter'})">Send →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT ── -->
+  <div class="lobby-right">
+
+    <!-- Game Settings -->
+    <div class="settings-card">
+      <div class="settings-title">⚙️ Game Settings</div>
+      <div class="setting-row">
+        <span class="setting-label">Game Mode</span>
+        <span class="setting-val">Classic</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Max Players</span>
+        <span class="setting-val">6</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Card Stack</span>
+        <span class="setting-val">ON</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Draw Until Play</span>
+        <span class="setting-val">OFF</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Wild Draw 4</span>
+        <span class="setting-val">Chaos Mode</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Time per Turn</span>
+        <span class="setting-val">30s</span>
+      </div>
+    </div>
+
+    <!-- Voice Chat -->
+    <div class="voice-card">
+      <div class="voice-title">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--lav)" stroke-width="1.8" stroke-linecap="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M14 8a6 6 0 0 1-12 0M8 14v2M5 16h6"/></svg>
+        Voice Chat
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--lav);margin-left:auto;">3 speaking</span>
+      </div>
+      <div class="waveform">
+        <div class="wbar" style="--h:28px;animation-delay:0s;"></div>
+        <div class="wbar" style="--h:16px;animation-delay:.1s;"></div>
+        <div class="wbar" style="--h:32px;animation-delay:.2s;"></div>
+        <div class="wbar" style="--h:20px;animation-delay:.3s;"></div>
+        <div class="wbar" style="--h:36px;animation-delay:.4s;"></div>
+        <div class="wbar" style="--h:12px;animation-delay:.5s;"></div>
+        <div class="wbar" style="--h:24px;animation-delay:.6s;"></div>
+        <div class="wbar" style="--h:32px;animation-delay:.7s;"></div>
+        <div class="wbar" style="--h:18px;animation-delay:.8s;"></div>
+        <div class="wbar" style="--h:28px;animation-delay:.9s;"></div>
+      </div>
+      <div class="voice-users">
+        <div class="voice-user">
+          <span class="voice-av">😈</span>
+          <span class="voice-name" style="font-weight:700;">Ravenous_404</span>
+          <div class="voice-indicator">
+            <div class="voice-bar" style="--h:8px;animation-delay:0s;height:6px;"></div>
+            <div class="voice-bar" style="--h:14px;animation-delay:.15s;height:12px;"></div>
+            <div class="voice-bar" style="--h:8px;animation-delay:.3s;height:6px;"></div>
+          </div>
+        </div>
+        <div class="voice-user">
+          <span class="voice-av">🦊</span>
+          <span class="voice-name">chaos.exe</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--ink-mute)" stroke-width="1.5" stroke-linecap="round"><path d="M7 1a2.5 2.5 0 0 1 2.5 2.5v3A2.5 2.5 0 0 1 7 9a2.5 2.5 0 0 1-2.5-2.5v-3A2.5 2.5 0 0 1 7 1z"/><line x1="2" y1="2" x2="12" y2="12"/></svg>
+        </div>
+        <div class="voice-user">
+          <span class="voice-av">🐺</span>
+          <span class="voice-name">nxght_owl</span>
+          <div class="voice-indicator">
+            <div class="voice-bar" style="--h:16px;animation-delay:.1s;height:14px;"></div>
+            <div class="voice-bar" style="--h:10px;animation-delay:.25s;height:8px;"></div>
+            <div class="voice-bar" style="--h:18px;animation-delay:.4s;height:16px;"></div>
+          </div>
+        </div>
+        <div class="voice-user">
+          <span class="voice-av">🌙</span>
+          <span class="voice-name">pixel_witch</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--ink-mute)" stroke-width="1.5" stroke-linecap="round"><path d="M7 1a2.5 2.5 0 0 1 2.5 2.5v3A2.5 2.5 0 0 1 7 9a2.5 2.5 0 0 1-2.5-2.5v-3A2.5 2.5 0 0 1 7 1z"/><line x1="2" y1="2" x2="12" y2="12"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spectators -->
+    <div class="spec-card">
+      <div class="spec-title">👁 Spectators (3)</div>
+      <div class="spec-avatars">
+        <span class="spec-av" title="void.runner">🌊</span>
+        <span class="spec-av" title="brxnstorm">⚡</span>
+        <span class="spec-av" title="braincell.exe">🧠</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM ACTION BAR -->
+<div class="lobby-bottom">
+  <div style="display:flex;align-items:center;gap:20px;">
+    <div class="countdown-display">
+      <div>
+        <div class="countdown-label">Starting in</div>
+        <div class="countdown-num-big" id="countdownNum">—</div>
+      </div>
+    </div>
+    <div style="font-family:'Caveat',cursive;font-size:16px;color:var(--ink-mute);transform:rotate(-1deg);">waiting for everyone...</div>
+  </div>
+
+  <div class="lobby-bottom-btns">
+    <button class="btn btn-outline btn-coral" style="background:rgba(255,90,90,.08);" onclick="leaveRoom()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="var(--coral)" stroke-width="1.7" stroke-linecap="round"><path d="M5 2H2.5A1.5 1.5 0 0 0 1 3.5v6A1.5 1.5 0 0 0 2.5 11H5M8.5 9l3-2.5-3-2.5M12 6.5H5"/></svg>
+      <span style="color:var(--coral);">Leave Room</span>
+    </button>
+    <button class="btn btn-lime" id="readyBtn" onclick="toggleReady(this)" style="padding:12px 28px;font-size:14px;">
+      ✓ I'm Ready!
+    </button>
+  </div>
+</div>
+
+<script>
+// Countdown timer
+let readyCount = 0;
+let countdownInterval = null;
+
+function toggleReady(btn) {
+  btn.classList.toggle('ready-state');
+  if (btn.classList.contains('ready-state')) {
+    btn.textContent = '✓ Ready!';
+    btn.style.background = '#22c55e';
+    btn.style.borderColor = '#16a34a';
+    readyCount++;
+    if (readyCount >= 1) startCountdown();
+  } else {
+    btn.innerHTML = '✓ I\'m Ready!';
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    clearInterval(countdownInterval);
+    document.getElementById('countdownNum').textContent = '—';
+  }
+}
+
+function startCountdown() {
+  let n = 5;
+  document.getElementById('countdownNum').textContent = n;
+  countdownInterval = setInterval(() => {
+    n--;
+    document.getElementById('countdownNum').textContent = n;
+    if (n <= 0) {
+      clearInterval(countdownInterval);
+      document.getElementById('countdownNum').textContent = 'GO!';
+      setTimeout(() => alert('🃏 Game starting! (This would launch the actual UNO game)'), 300);
+    }
+  }, 1000);
+}
+
+function copyCode(el) {
+  navigator.clipboard.writeText('CHAOS-7X2K').catch(() => {});
+  el.classList.add('copied');
+  setTimeout(() => el.classList.remove('copied'), 1500);
+}
+
+function sendChat(e) {
+  if (e.key !== 'Enter') return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `<span class="chat-av">😈</span><div class="chat-content"><div class="chat-user" style="color:var(--lime-dk);">Ravenous_404 (you)</div><div class="chat-text">${text}</div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  input.value = '';
+}
+
+function inviteFriends() {
+  navigator.clipboard.writeText('CHAOS-7X2K').catch(() => {});
+  alert('Room code CHAOS-7X2K copied to clipboard! Share it with your friends.');
+}
+
+function leaveRoom() {
+  if (confirm('Leave the room?')) location.href = 'nox-dashboard.html';
+}
+</script>
+</body>
+</html>

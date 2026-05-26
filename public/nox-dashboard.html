@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOX — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..900;1,9..40,300..900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #F7F3EC;
+      --white:    #FFFFFF;
+      --ink:      #141810;
+      --ink-mid:  #3A3D35;
+      --ink-mute: #888C7E;
+      --lime:     #BEFF3C;
+      --lime-dk:  #8FB800;
+      --lav:      #9F8FFF;
+      --lav-lt:   #EAE6FF;
+      --coral:    #FF5A5A;
+      --sidebar:  240px;
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--ink);
+      display: flex; height: 100vh; overflow: hidden;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+      opacity:.03;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size:256px;
+    }
+
+    /* ── SIDEBAR ── */
+    aside {
+      width: var(--sidebar); flex-shrink: 0;
+      background: var(--white);
+      border-right: 2px solid var(--ink);
+      display: flex; flex-direction: column;
+      height: 100vh; overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      padding: 22px 20px 16px;
+      font-family:'DM Sans',sans-serif; font-weight:900; font-size:22px;
+      letter-spacing:-0.05em; border-bottom: 1px solid rgba(20,24,16,.08);
+    }
+    .sidebar-logo span { color: var(--lime-dk); }
+
+    .nav-section-label {
+      padding: 16px 20px 6px;
+      font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700;
+      letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-mute);
+    }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 20px; cursor:pointer;
+      font-size: 14px; font-weight: 500; color: var(--ink-mid);
+      border-left: 3px solid transparent;
+      transition: .15s; text-decoration:none;
+    }
+    .nav-item:hover { background: rgba(20,24,16,.04); color: var(--ink); }
+    .nav-item.active {
+      border-left-color: var(--lime-dk);
+      background: rgba(190,255,60,.12); color: var(--ink); font-weight: 700;
+    }
+    .nav-icon { opacity:.7; flex-shrink:0; }
+    .nav-item.active .nav-icon { opacity:1; }
+
+    .sidebar-spacer { flex:1; }
+
+    /* User Profile Card */
+    .sidebar-profile {
+      margin: 12px; padding: 14px;
+      background: var(--bg); border: 2px solid var(--ink);
+      border-radius: 12px; box-shadow: 3px 3px 0 var(--ink);
+    }
+    .profile-top { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .profile-avatar {
+      width:40px; height:40px; border-radius:50%;
+      border: 2px solid var(--lav);
+      box-shadow: 0 0 0 4px rgba(159,143,255,.2);
+      font-size:22px; display:flex; align-items:center; justify-content:center;
+      background: var(--lav-lt);
+    }
+    .profile-name { font-weight:700; font-size:13px; line-height:1.2; }
+    .profile-level { font-family:'JetBrains Mono',monospace; font-size:10px; color: var(--lime-dk); font-weight:600; }
+    .xp-bar-wrap { margin-bottom:6px; }
+    .xp-bar-track { height:4px; background:rgba(20,24,16,.12); border-radius:2px; overflow:hidden; }
+    .xp-bar-fill { height:100%; background: var(--lime-dk); border-radius:2px; width:92%; }
+    .xp-label { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--ink-mute); margin-top:3px; text-align:right; }
+
+    /* Friends Online */
+    .friends-section { padding: 0 12px 16px; }
+    .friends-header {
+      font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700;
+      letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-mute);
+      padding: 12px 8px 8px;
+    }
+    .friend-row {
+      display:flex; align-items:center; gap:8px; padding: 6px 8px;
+      border-radius:8px; cursor:pointer;
+    }
+    .friend-row:hover { background: rgba(20,24,16,.04); }
+    .friend-avatar { width:28px; height:28px; border-radius:50%; font-size:16px; display:flex; align-items:center; justify-content:center; background: var(--lav-lt); position:relative; }
+    .friend-status { position:absolute; bottom:0; right:0; width:8px; height:8px; border-radius:50%; border:2px solid var(--white); }
+    .friend-status.online { background:#22c55e; animation:pulse-green 2s infinite; }
+    .friend-status.busy { background:var(--coral); }
+    .friend-status.away { background:var(--ink-mute); }
+    @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.4)} 50%{box-shadow:0 0 0 4px rgba(34,197,94,0)} }
+    .friend-info { flex:1; min-width:0; }
+    .friend-name { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .friend-activity { font-size:10px; color:var(--ink-mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* ── MAIN CONTENT ── */
+    main {
+      flex:1; overflow-y:auto; padding: 32px 36px;
+    }
+
+    /* Top Bar */
+    .top-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; }
+    .greeting { font-size:22px; font-weight:600; }
+    .greeting em { font-family:'Instrument Serif',serif; font-style:italic; font-size:26px; font-weight:400; }
+    .top-bar-right { display:flex; align-items:center; gap:12px; }
+    .search-box {
+      display:flex; align-items:center; gap:8px;
+      background:var(--white); border:2px solid rgba(20,24,16,.15);
+      border-radius:999px; padding:7px 16px;
+    }
+    .search-box input { border:none; outline:none; font-family:'DM Sans',sans-serif; font-size:13px; background:transparent; width:160px; }
+    .icon-btn {
+      width:36px; height:36px; border-radius:50%;
+      border:2px solid rgba(20,24,16,.15); background:var(--white);
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
+      transition:.15s;
+    }
+    .icon-btn:hover { border-color:var(--ink); }
+    .icon-btn.notif { position:relative; }
+    .notif-badge {
+      position:absolute; top:4px; right:4px;
+      width:16px; height:16px; border-radius:50%; background:var(--coral);
+      font-size:9px; font-weight:700; color:white;
+      display:flex; align-items:center; justify-content:center;
+      border:2px solid var(--white);
+    }
+
+    /* Section Labels */
+    .sec-label {
+      font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700;
+      letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-mute);
+      margin-bottom:10px;
+    }
+    .sec-title {
+      font-family:'Instrument Serif',serif; font-style:italic;
+      font-size:28px; line-height:1.1; margin-bottom:18px;
+    }
+
+    /* Quick Play Cards */
+    .quick-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+    .quick-card {
+      background:var(--white); border:2px solid var(--ink);
+      border-radius:14px; box-shadow:3px 3px 0 var(--ink); padding:16px;
+      cursor:pointer; transition:.2s;
+    }
+    .quick-card:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+    .quick-icon { font-size:36px; margin-bottom:10px; display:block; }
+    .quick-name { font-weight:700; font-size:14px; margin-bottom:3px; }
+    .quick-meta { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-mute); margin-bottom:12px; }
+    .quick-btn {
+      width:100%; padding:7px; background:var(--lime); border:2px solid var(--ink);
+      border-radius:8px; font-family:'DM Sans',sans-serif; font-weight:700; font-size:12px;
+      cursor:pointer; box-shadow:2px 2px 0 var(--ink); transition:.15s;
+    }
+    .quick-btn:hover { transform:translate(-1px,-1px); box-shadow:3px 3px 0 var(--ink); }
+
+    /* Daily Challenge */
+    .daily-challenge {
+      background:var(--lime); border:2px solid var(--ink);
+      border-radius:14px; box-shadow:4px 4px 0 var(--ink);
+      padding:24px 28px; display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:28px;
+    }
+    .dc-left {}
+    .dc-num { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:rgba(20,24,16,.5); margin-bottom:4px; }
+    .dc-title { font-family:'Instrument Serif',serif; font-style:italic; font-size:24px; margin-bottom:6px; }
+    .dc-challenge { font-weight:700; font-size:17px; margin-bottom:12px; }
+    .dc-progress-track { height:5px; background:rgba(20,24,16,.15); border-radius:3px; width:220px; overflow:hidden; margin-bottom:4px; }
+    .dc-progress-fill { height:100%; background:var(--ink); border-radius:3px; width:33%; }
+    .dc-progress-label { font-family:'JetBrains Mono',monospace; font-size:10px; color:rgba(20,24,16,.6); }
+    .dc-right { text-align:right; }
+    .dc-timer { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; color:var(--ink); line-height:1; margin-bottom:4px; }
+    .dc-timer-label { font-size:11px; color:rgba(20,24,16,.6); }
+    .dc-reward { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; background:rgba(20,24,16,.1); border-radius:999px; font-size:11px; font-weight:600; margin-top:8px; }
+
+    /* Live Rooms */
+    .live-now-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+    .live-now-label {
+      font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+      letter-spacing:0.1em; color:var(--coral);
+      display:flex; align-items:center; gap:5px;
+    }
+    .blink-cursor { animation:blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .rooms-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
+    .room-card {
+      background:var(--white); border:2px solid var(--ink);
+      border-radius:14px; box-shadow:3px 3px 0 var(--ink); padding:18px;
+      transition:.2s; cursor:pointer;
+    }
+    .room-card:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+    .room-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+    .room-game-tag {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:3px 10px; border:1px solid rgba(20,24,16,.15);
+      border-radius:999px; font-size:11px; font-weight:600;
+    }
+    .live-badge {
+      display:inline-flex; align-items:center; gap:4px;
+      background:#FFF0F0; border:1px solid var(--coral); border-radius:999px;
+      padding:3px 8px; font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; color:var(--coral);
+    }
+    .live-dot { width:5px; height:5px; border-radius:50%; background:var(--coral); animation:pulse-live 1.2s infinite; }
+    @keyframes pulse-live { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .room-name { font-weight:700; font-size:15px; margin-bottom:2px; }
+    .room-host { font-size:11px; color:var(--ink-mute); font-family:'JetBrains Mono',monospace; margin-bottom:10px; }
+    .avatar-stack { display:flex; margin-bottom:8px; }
+    .av { width:28px; height:28px; border-radius:50%; border:2px solid var(--white); margin-left:-7px; font-size:15px; display:flex; align-items:center; justify-content:center; background:var(--lav-lt); }
+    .av:first-child { margin-left:0; }
+    .av-more { background:var(--ink); color:white; font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; }
+    .room-cap { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-mute); margin-bottom:12px; }
+    .room-btns { display:flex; gap:8px; }
+    .rbtn { flex:1; padding:7px 0; border-radius:8px; font-weight:700; font-size:11px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:.15s; }
+    .rbtn-spec { background:transparent; border:2px solid var(--ink); }
+    .rbtn-spec:hover { background:var(--ink); color:white; }
+    .rbtn-join { background:var(--lime); border:2px solid var(--ink); box-shadow:2px 2px 0 var(--ink); }
+    .rbtn-join:hover { transform:translate(-1px,-1px); box-shadow:3px 3px 0 var(--ink); }
+
+    /* Achievements */
+    .achievements-row { display:flex; gap:12px; }
+    .ach-chip {
+      display:flex; align-items:center; gap:8px; padding:10px 16px;
+      background:var(--white); border:2px solid var(--ink); border-radius:999px;
+      box-shadow:2px 2px 0 var(--ink); font-size:13px; font-weight:600;
+    }
+    .ach-icon { font-size:16px; }
+
+    /* Divider */
+    hr { border:none; border-top:1px solid rgba(20,24,16,.1); margin:20px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside>
+  <div class="sidebar-logo">NO<span>X</span></div>
+
+  <div class="nav-section-label">Menu</div>
+
+  <a href="#" class="nav-item active">
+    <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 6.5L8 2l6 4.5V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6.5z"/>
+      <path d="M6 15V9h4v6"/>
+    </svg>
+    Home
+  </a>
+  <a href="#" class="nav-item">
+    <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="6" width="12" height="8" rx="2"/>
+      <path d="M6 6V4a2 2 0 0 1 4 0v2"/>
+      <circle cx="6" cy="10" r="1" fill="currentColor"/>
+      <circle cx="10" cy="10" r="1" fill="currentColor"/>
+    </svg>
+    Games
+  </a>
+  <a href="#" class="nav-item">
+    <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="6" cy="5" r="2.5"/>
+      <path d="M1 14v-1a5 5 0 0 1 10 0v1"/>
+      <path d="M12 7a2.5 2.5 0 0 1 0 5M15 14a4 4 0 0 0-3-3.87"/>
+    </svg>
+    Friends
+  </a>
+  <a href="#" class="nav-item">
+    <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 2l1.5 3.5L13 6l-2.5 2.5.5 3.5L8 10.5 5 12l.5-3.5L3 6l3.5-.5L8 2z"/>
+    </svg>
+    Leaderboard
+  </a>
+  <a href="#" class="nav-item">
+    <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="2" width="12" height="12" rx="2"/>
+      <path d="M2 7h12M7 2v12"/>
+    </svg>
+    Tournaments
+  </a>
+  <a href="#" class="nav-item">
+    <svg class="nav-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 2a4 4 0 0 0-4 4c0 3-1 4-2 5h12c-1-1-2-2-2-5a4 4 0 0 0-4-4zM6 13a2 2 0 0 0 4 0"/>
+    </svg>
+    Clans
+  </a>
+
+  <div class="sidebar-spacer"></div>
+
+  <!-- User Profile -->
+  <div class="sidebar-profile">
+    <div class="profile-top">
+      <div class="profile-avatar">😈</div>
+      <div>
+        <div class="profile-name">Ravenous_404</div>
+        <div class="profile-level">Level 23</div>
+      </div>
+    </div>
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-track"><div class="xp-bar-fill"></div></div>
+      <div class="xp-label">1,840 / 2,000 XP</div>
+    </div>
+  </div>
+
+  <!-- Friends -->
+  <div class="friends-section">
+    <div class="friends-header">Friends Online · 5</div>
+    <div class="friend-row">
+      <div class="friend-avatar">🦊<span class="friend-status online"></span></div>
+      <div class="friend-info">
+        <div class="friend-name">chaos.exe</div>
+        <div class="friend-activity">Playing UNO</div>
+      </div>
+    </div>
+    <div class="friend-row">
+      <div class="friend-avatar">🐺<span class="friend-status online"></span></div>
+      <div class="friend-info">
+        <div class="friend-name">nxght_owl</div>
+        <div class="friend-activity">In Lobby</div>
+      </div>
+    </div>
+    <div class="friend-row">
+      <div class="friend-avatar">🌙<span class="friend-status busy"></span></div>
+      <div class="friend-info">
+        <div class="friend-name">pixel_witch</div>
+        <div class="friend-activity">Do Not Disturb</div>
+      </div>
+    </div>
+    <div class="friend-row">
+      <div class="friend-avatar">🎭<span class="friend-status away"></span></div>
+      <div class="friend-info">
+        <div class="friend-name">void.runner</div>
+        <div class="friend-activity">Away · 20m</div>
+      </div>
+    </div>
+    <div class="friend-row">
+      <div class="friend-avatar">⚡<span class="friend-status online"></span></div>
+      <div class="friend-info">
+        <div class="friend-name">brxnstorm</div>
+        <div class="friend-activity">Playing Skribbl</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ══ MAIN CONTENT ══ -->
+<main>
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="greeting">
+      Good evening, <em>Ravenous</em> 👋
+    </div>
+    <div class="top-bar-right">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="4"/><path d="m10 10 2.5 2.5" stroke-linecap="round"/></svg>
+        <input placeholder="Search games, players..." />
+      </div>
+      <div class="icon-btn notif">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 2a4 4 0 0 0-4 4c0 3-1 4-2 5h12c-1-1-2-2-2-5a4 4 0 0 0-4-4zM6 13a2 2 0 0 0 4 0"/></svg>
+        <div class="notif-badge">3</div>
+      </div>
+      <div class="icon-btn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v2m0 10v2M1 8h2m10 0h2m-2.5-4.5-1.5 1.5m-5 5-1.5 1.5m8.5 0-1.5-1.5m-5-5L3.5 3.5"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Play -->
+  <div class="sec-label">01 — QUICK PLAY</div>
+  <div class="sec-title">Jump back in ⚡</div>
+  <div class="quick-row">
+    <div class="quick-card">
+      <span class="quick-icon">🃏</span>
+      <div class="quick-name">UNO</div>
+      <div class="quick-meta">Last played · 2h ago</div>
+      <button class="quick-btn">Quick Match →</button>
+    </div>
+    <div class="quick-card">
+      <span class="quick-icon">♟️</span>
+      <div class="quick-name">Chess</div>
+      <div class="quick-meta">Last played · 1d ago</div>
+      <button class="quick-btn">Quick Match →</button>
+    </div>
+    <div class="quick-card">
+      <span class="quick-icon">🎲</span>
+      <div class="quick-name">Ludo</div>
+      <div class="quick-meta">Last played · 3d ago</div>
+      <button class="quick-btn">Quick Match →</button>
+    </div>
+    <div class="quick-card">
+      <span class="quick-icon">✏️</span>
+      <div class="quick-name">Skribbl.io</div>
+      <div class="quick-meta">Last played · 5d ago</div>
+      <button class="quick-btn">Quick Match →</button>
+    </div>
+  </div>
+
+  <!-- Daily Challenge -->
+  <div class="sec-label">02 — DAILY CHALLENGE</div>
+  <div class="daily-challenge">
+    <div class="dc-left">
+      <div class="dc-num">01 — TODAY</div>
+      <div class="dc-title">Daily Challenge 🎯</div>
+      <div class="dc-challenge">Win 3 games of UNO</div>
+      <div class="dc-progress-track"><div class="dc-progress-fill"></div></div>
+      <div class="dc-progress-label">1 / 3 completed</div>
+      <div class="dc-reward">🏆 Flame Avatar Border + 500 XP</div>
+    </div>
+    <div class="dc-right">
+      <div class="dc-timer">14:32:08</div>
+      <div class="dc-timer-label">Resets in</div>
+    </div>
+  </div>
+
+  <!-- Live Rooms -->
+  <div class="live-now-header">
+    <div class="sec-label" style="margin-bottom:0;">03 — LIVE ROOMS</div>
+    <div class="live-now-label">
+      <div class="live-dot"></div>
+      NOW PLAYING<span class="blink-cursor">_</span>
+    </div>
+  </div>
+  <div class="sec-title">Jump In Right Now</div>
+  <div class="rooms-row">
+    <div class="room-card">
+      <div class="room-top">
+        <div class="room-game-tag">🃏 UNO</div>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      </div>
+      <div class="room-name">Chaos Squad</div>
+      <div class="room-host">Host: nxght_owl</div>
+      <div class="avatar-stack">
+        <div class="av">😈</div>
+        <div class="av">🦊</div>
+        <div class="av">🐺</div>
+        <div class="av av-more">+1</div>
+      </div>
+      <div class="room-cap">4 / 6 players</div>
+      <div class="room-btns">
+        <button class="rbtn rbtn-spec">Spectate</button>
+        <button class="rbtn rbtn-join">Join →</button>
+      </div>
+    </div>
+    <div class="room-card">
+      <div class="room-top">
+        <div class="room-game-tag">✏️ Skribbl</div>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      </div>
+      <div class="room-name">Brain Rot Club</div>
+      <div class="room-host">Host: chaos.exe</div>
+      <div class="avatar-stack">
+        <div class="av">🧠</div>
+        <div class="av">🦋</div>
+        <div class="av">🎭</div>
+        <div class="av av-more">+4</div>
+      </div>
+      <div class="room-cap">7 / 12 players</div>
+      <div class="room-btns">
+        <button class="rbtn rbtn-spec">Spectate</button>
+        <button class="rbtn rbtn-join">Join →</button>
+      </div>
+    </div>
+    <div class="room-card">
+      <div class="room-top">
+        <div class="room-game-tag">🎲 Ludo</div>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      </div>
+      <div class="room-name">Sunday Destruction</div>
+      <div class="room-host">Host: void.runner</div>
+      <div class="avatar-stack">
+        <div class="av">🌊</div>
+        <div class="av">🔥</div>
+        <div class="av">⚡</div>
+      </div>
+      <div class="room-cap">3 / 4 players</div>
+      <div class="room-btns">
+        <button class="rbtn rbtn-spec">Spectate</button>
+        <button class="rbtn rbtn-join">Join →</button>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- Achievements -->
+  <div class="sec-label" style="margin-bottom:12px;">04 — RECENT WINS</div>
+  <div class="achievements-row">
+    <div class="ach-chip"><span class="ach-icon">🏆</span> 5-Game Win Streak</div>
+    <div class="ach-chip"><span class="ach-icon">⚡</span> Speed Destroyer</div>
+    <div class="ach-chip"><span class="ach-icon">🎯</span> Daily Complete × 7</div>
+  </div>
+</main>
+
+</body>
+</html>

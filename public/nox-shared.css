@@ -1,27 +1,10 @@
-@import "tailwindcss";
-
 /* ═══════════════════════════════════════
    NOX SHARED DESIGN SYSTEM
    Premium Soft Brutalism + Doodle Energy
 ═══════════════════════════════════════ */
 
-@theme {
-  --color-bg: #F7F3EC;
-  --color-white: #FFFFFF;
-  --color-ink: #141810;
-  --color-ink-mid: #3A3D35;
-  --color-ink-mute: #888C7E;
-  --color-lime: #BEFF3C;
-  --color-lime-dk: #8FB800;
-  --color-lav: #9F8FFF;
-  --color-lav-lt: #EAE6FF;
-  --color-coral: #FF5A5A;
-  --color-gold: #F5A623;
-  --font-sans: 'DM Sans', sans-serif;
-  --font-serif: 'Instrument Serif', serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-doodle: 'Caveat', cursive;
-}
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..900;1,9..40,300..900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -200,6 +183,8 @@ body::after {
 /* ─────────────────────────────────
    DOODLE DECORATIONS
 ───────────────────────────────── */
+
+/* Floating wiggle animation */
 @keyframes doodle-float {
   0%,100% { transform: translateY(0) rotate(var(--r,0deg)); }
   33% { transform: translateY(-6px) rotate(calc(var(--r,0deg) + 3deg)); }
@@ -210,26 +195,20 @@ body::after {
   0%,100% { transform: rotate(var(--r,-5deg)) scale(1); }
   50% { transform: rotate(calc(var(--r,-5deg) + 8deg)) scale(1.05); }
 }
+@keyframes squiggle-draw { 0% { stroke-dashoffset: 300; } 100% { stroke-dashoffset: 0; } }
 @keyframes blink-cursor { 0%,100%{opacity:1} 50%{opacity:0} }
 @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 @keyframes float-bob { 0%,100%{transform:translateY(0) rotate(var(--r,0deg));} 50%{transform:translateY(-10px) rotate(var(--r,0deg));} }
 
+/* The actual doodle elements */
 .doodle {
   position: absolute; pointer-events: none; z-index: 2;
   font-family: 'Caveat', cursive;
   animation: doodle-float 4s ease-in-out infinite;
   user-select: none;
 }
-.doodle-interactive {
-  pointer-events: auto;
-  cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;
-}
-.doodle-interactive:hover {
-  transform: scale(1.25) rotate(var(--hover-r, 12deg)) !important;
-  color: var(--lime-dk) !important;
-}
 
+/* Squiggly underline SVG mixin-style */
 .squig-underline {
   position: relative; display: inline-block;
 }
@@ -246,6 +225,7 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 8'%3E%3Cpath d='M0 4 Q12.5 0 25 4 Q37.5 8 50 4 Q62.5 0 75 4 Q87.5 8 100 4' fill='none' stroke='%239F8FFF' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
+/* Section typography */
 .sec-eyebrow {
   font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
   letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 10px;
@@ -255,6 +235,11 @@ body::after {
   font-size: clamp(32px,3.5vw,48px); line-height: 1.1; margin-bottom: 32px;
 }
 
+/* Layout helpers */
+.container { max-width: 1280px; margin: 0 auto; padding: 0 48px; }
+.section-pad { padding: 72px 0; }
+
+/* Avatar stack */
 .avatar-stack { display: flex; }
 .av {
   width: 30px; height: 30px; border-radius: 50%;
@@ -265,12 +250,11 @@ body::after {
 .av:first-child { margin-left: 0; }
 .av-dark { background: var(--ink); color: white; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; }
 
+/* Page wrapper for 2-col (sidebar) layouts */
+.page-layout { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 240px; flex-shrink: 0; background: var(--white); border-right: 2px solid var(--ink); display: flex; flex-direction: column; overflow-y: auto; }
+.main-scroll { flex: 1; overflow-y: auto; }
+
+/* Divider */
 .divider { height: 2px; background: var(--ink); }
-
-/* ── SUPPRESS NEXT.JS DEV INDICATOR OVERLAY ── */
-nextjs-portal, 
-#nextjs-dev-overlay,
-[data-nextjs-dialog-overlay] {
-  display: none !important;
-}
-
+.divider-light { height: 1px; background: rgba(20,24,16,.1); }

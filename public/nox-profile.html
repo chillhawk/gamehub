@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>NOX — Player Profile (Ravenous_404)</title>
+  <link rel="stylesheet" href="nox-shared.css"/>
+  <style>
+    .profile-page {
+      max-width: 1100px; margin: 0 auto; padding: 48px;
+    }
+
+    /* ── PROFILE HEADER ── */
+    .profile-header {
+      position: relative; margin-bottom: 40px;
+    }
+    .profile-banner {
+      height: 200px; background: var(--ink); border-radius: 24px;
+      border: 2px solid var(--ink); box-shadow: var(--card-shadow);
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .banner-pattern {
+      position: absolute; inset: 0; opacity: 0.15;
+      background-image: radial-gradient(var(--lime) 2px, transparent 2px);
+      background-size: 24px 24px; pointer-events: none;
+    }
+    .banner-doodle {
+      position: absolute; font-size: 80px; opacity: 0.2; color: var(--lime);
+      animation: float-bob 4s ease-in-out infinite; pointer-events: none;
+    }
+    .banner-doodle.d1 { top: 20px; left: 40px; --r: -15deg; }
+    .banner-doodle.d2 { bottom: -20px; right: 60px; --r: 10deg; font-size: 120px; color: var(--lav); }
+
+    .profile-info {
+      display: flex; align-items: flex-end; gap: 24px;
+      margin-top: -60px; padding: 0 40px; position: relative; z-index: 10;
+    }
+    .profile-avatar {
+      width: 140px; height: 140px; border-radius: 24px;
+      background: var(--lime); border: 4px solid var(--white);
+      box-shadow: 0 4px 12px rgba(20,24,16,.15); display: flex;
+      align-items: center; justify-content: center; font-size: 64px;
+      position: relative;
+    }
+    .avatar-doodle {
+      position: absolute; top: -16px; right: -24px; font-size: 32px;
+      transform: rotate(15deg);
+    }
+    .profile-details { flex: 1; padding-bottom: 8px; }
+    .profile-name { font-weight: 900; font-size: 36px; letter-spacing: -0.03em; margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
+    .profile-level { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--ink-mid); background: rgba(20,24,16,.08); padding: 4px 12px; border-radius: 999px; }
+    .profile-clan { font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink-mute); font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    
+    .profile-actions { display: flex; gap: 10px; padding-bottom: 12px; }
+
+    /* ── LAYOUT GRID ── */
+    .profile-grid { display: grid; grid-template-columns: 1fr 340px; gap: 32px; }
+    .main-col { display: flex; flex-direction: column; gap: 32px; }
+    .side-col { display: flex; flex-direction: column; gap: 32px; }
+
+    /* ── STATS SECTION ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .stat-card {
+      background: var(--white); border: 2px solid var(--ink);
+      border-radius: var(--radius); padding: 24px; text-align: center;
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+    .stat-value { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 42px; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-mute); }
+
+    /* ── TROPHY SHELF ── */
+    .trophy-shelf {
+      background: var(--white); border: 2px solid var(--ink);
+      border-radius: var(--radius); padding: 32px; box-shadow: 4px 4px 0 var(--ink);
+      position: relative;
+    }
+    .shelf-title { font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+    .trophy-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .trophy-item { text-align: center; }
+    .trophy-icon {
+      width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--ink);
+      background: var(--bg); display: flex; align-items: center; justify-content: center;
+      font-size: 32px; margin: 0 auto 12px; box-shadow: 2px 2px 0 var(--ink);
+      position: relative; transition: .2s; cursor: default;
+    }
+    .trophy-icon:hover { transform: translateY(-4px); box-shadow: 4px 6px 0 var(--ink); }
+    .trophy-icon.gold { background: rgba(245,166,35,.15); border-color: var(--gold); }
+    .trophy-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+    .trophy-date { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-mute); }
+
+    /* ── MATCH HISTORY ── */
+    .history-card { background: var(--white); border: 2px solid var(--ink); border-radius: var(--radius); box-shadow: 4px 4px 0 var(--ink); overflow: hidden; }
+    .history-header { padding: 24px 28px; border-bottom: 1.5px solid rgba(20,24,16,.1); display: flex; align-items: center; justify-content: space-between; }
+    .history-list { display: flex; flex-direction: column; }
+    .history-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 28px; border-bottom: 1px solid rgba(20,24,16,.08); transition: .15s;
+    }
+    .history-item:last-child { border-bottom: none; }
+    .history-item:hover { background: rgba(20,24,16,.02); }
+    
+    .hi-left { display: flex; align-items: center; gap: 16px; }
+    .hi-game-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 1.5px solid var(--ink); }
+    .hi-details { display: flex; flex-direction: column; gap: 2px; }
+    .hi-game-name { font-weight: 700; font-size: 14px; }
+    .hi-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); }
+    
+    .hi-result { display: flex; align-items: center; gap: 20px; }
+    .hi-outcome { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; }
+    .hi-outcome.win { color: var(--lime-dk); }
+    .hi-outcome.loss { color: var(--coral); }
+    .hi-xp { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--lav); }
+
+    /* ── SIDEBAR CARDS ── */
+    .side-card { background: var(--white); border: 2px solid var(--ink); border-radius: var(--radius); padding: 24px; box-shadow: 3px 3px 0 var(--ink); }
+    
+    .friends-list { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
+    .friend-item { display: flex; align-items: center; justify-content: space-between; }
+    .fi-left { display: flex; align-items: center; gap: 10px; }
+    .fi-av { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--ink); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .fi-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+    .fi-status { font-family: 'JetBrains Mono', monospace; font-size: 9px; }
+    .fi-status.online { color: var(--lime-dk); font-weight: 700; }
+    .fi-status.offline { color: var(--ink-mute); }
+    .fi-btn { width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid rgba(20,24,16,.15); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: .15s; background: transparent; }
+    .fi-btn:hover { background: rgba(20,24,16,.05); }
+
+    /* XP Progress */
+    .xp-bar-container { height: 8px; background: rgba(20,24,16,.1); border-radius: 999px; overflow: hidden; margin: 16px 0 8px; }
+    .xp-bar-fill { height: 100%; background: var(--lav); border-radius: 999px; width: 72%; }
+    .xp-text { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-mute); font-weight: 700; }
+
+  </style>
+</head>
+<body>
+
+<nav class="nox-nav">
+  <a href="nox.html" class="nav-logo">NO<span class="logo-x">X</span><span class="logo-doodle">!</span></a>
+  <ul class="nav-links">
+    <li><a href="nox-dashboard.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.5L7 1.5l5.5 4V13H9V9.5H5V13H1.5V5.5z"/></svg>Home</a></li>
+    <li><a href="nox-games.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1.5" y="4.5" width="11" height="7" rx="1.5"/><path d="M9 4.5V3a2 2 0 0 0-4 0v1.5M5 8h1.5M6.5 8V9.5M9.5 8h1"/></svg>Games</a></li>
+    <li><a href="nox-leaderboard.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5l1.2 2.8 3 .3-2.2 2 .7 3L7 8.2 4.3 9.6l.7-3L2.8 4.6l3-.3z"/></svg>Leaderboard</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="online-pill"><span class="pulse-green"></span><span>847 online</span></div>
+    <a href="nox-profile.html" class="btn btn-dark" style="padding:7px 16px;font-size:12px;">😈 Ravenous_404</a>
+  </div>
+</nav>
+
+<div class="profile-page">
+  
+  <div class="breadcrumb" style="font-size:12px;color:var(--ink-mute);margin-bottom:24px;display:flex;align-items:center;gap:8px;">
+    <a href="nox.html" style="color:var(--ink-mid);text-decoration:none;">Home</a> <span>/</span> <span style="color:var(--ink);">Profile</span>
+  </div>
+
+  <!-- PROFILE HEADER -->
+  <div class="profile-header">
+    <div class="profile-banner">
+      <div class="banner-pattern"></div>
+      <div class="banner-doodle d1">✦</div>
+      <div class="banner-doodle d2">★</div>
+    </div>
+    
+    <div class="profile-info">
+      <div class="profile-avatar">
+        😈
+        <div class="avatar-doodle">👑</div>
+      </div>
+      <div class="profile-details">
+        <h1 class="profile-name">Ravenous_404 <span class="profile-level">Lv. 23</span></h1>
+        <div class="profile-clan">The Untamed 🐺 · Member since 2023</div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-outline" style="padding:10px 16px;">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg> Add Friend
+        </button>
+        <button class="btn btn-lime" style="padding:10px 16px;">
+          Challenge ⚔️
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-grid">
+    
+    <!-- MAIN COLUMN -->
+    <div class="main-col">
+      
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">847</div>
+          <div class="stat-label">Games Played</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--lime-dk);">61%</div>
+          <div class="stat-label">Win Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:var(--lav);">#142</div>
+          <div class="stat-label">Global Rank</div>
+        </div>
+      </div>
+
+      <!-- Trophy Shelf -->
+      <div class="trophy-shelf">
+        <div class="doodle font-doodle" style="top:20px;right:32px;font-size:18px;color:var(--coral);transform:rotate(8deg);">so sweaty</div>
+        <div class="shelf-title">Trophy Cabinet 🏆</div>
+        
+        <div class="trophy-grid">
+          <div class="trophy-item">
+            <div class="trophy-icon gold" title="Tournament Winner">🥇</div>
+            <div class="trophy-name">Chaos Cup '25</div>
+            <div class="trophy-date">MAY 2025</div>
+          </div>
+          <div class="trophy-item">
+            <div class="trophy-icon" style="background:#E8F5E9;border-color:#4CAF50;" title="100 UNO Wins">🃏</div>
+            <div class="trophy-name">UNO Master</div>
+            <div class="trophy-date">APR 2025</div>
+          </div>
+          <div class="trophy-item">
+            <div class="trophy-icon" style="background:#E3F2FD;border-color:#2196F3;" title="Flawless Victory">⚡</div>
+            <div class="trophy-name">Flawless</div>
+            <div class="trophy-date">MAR 2025</div>
+          </div>
+          <div class="trophy-item">
+            <div class="trophy-icon" style="background:var(--bg);border-color:rgba(20,24,16,.2);opacity:.4;">🔒</div>
+            <div class="trophy-name">Locked</div>
+            <div class="trophy-date">---</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match History -->
+      <div class="history-card">
+        <div class="history-header">
+          <span style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:16px;">Recent Matches</span>
+          <a href="#" style="font-size:12px;font-weight:700;color:var(--ink-mid);text-decoration:none;">View All →</a>
+        </div>
+        <div class="history-list">
+          
+          <div class="history-item">
+            <div class="hi-left">
+              <div class="hi-game-icon" style="background:#FFE0B2;">🃏</div>
+              <div class="hi-details">
+                <span class="hi-game-name">UNO Classic</span>
+                <span class="hi-time">2 hours ago · Chaos Squad Room</span>
+              </div>
+            </div>
+            <div class="hi-result">
+              <span class="hi-outcome win">1ST PLACE</span>
+              <span class="hi-xp">+240 XP</span>
+            </div>
+          </div>
+
+          <div class="history-item">
+            <div class="hi-left">
+              <div class="hi-game-icon" style="background:#E8F5E9;">✏️</div>
+              <div class="hi-details">
+                <span class="hi-game-name">Skribbl.io</span>
+                <span class="hi-time">Yesterday · Public Match</span>
+              </div>
+            </div>
+            <div class="hi-result">
+              <span class="hi-outcome loss">3RD PLACE</span>
+              <span class="hi-xp">+45 XP</span>
+            </div>
+          </div>
+
+          <div class="history-item">
+            <div class="hi-left">
+              <div class="hi-game-icon" style="background:#E8EAF6;">♟️</div>
+              <div class="hi-details">
+                <span class="hi-game-name">Chess (Blitz 3min)</span>
+                <span class="hi-time">2 days ago · vs. pixel_witch</span>
+              </div>
+            </div>
+            <div class="hi-result">
+              <span class="hi-outcome win">VICTORY</span>
+              <span class="hi-xp">+180 XP</span>
+            </div>
+          </div>
+
+          <div class="history-item">
+            <div class="hi-left">
+              <div class="hi-game-icon" style="background:#FFE0B2;">🃏</div>
+              <div class="hi-details">
+                <span class="hi-game-name">UNO Classic</span>
+                <span class="hi-time">3 days ago · Public Match</span>
+              </div>
+            </div>
+            <div class="hi-result">
+              <span class="hi-outcome win">1ST PLACE</span>
+              <span class="hi-xp">+240 XP</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SIDE COLUMN -->
+    <div class="side-col">
+      
+      <!-- Current Level -->
+      <div class="side-card" style="background:var(--lav-lt);border-color:var(--lav);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-weight:700;font-size:16px;">Level 23</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--lav);">14,280 / 15,000 XP</span>
+        </div>
+        <div class="xp-bar-container"><div class="xp-bar-fill"></div></div>
+        <div class="xp-text"><span>Level 23</span><span>Level 24</span></div>
+      </div>
+
+      <!-- Friends -->
+      <div class="side-card">
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px;display:flex;justify-content:space-between;">
+          Squad (12)
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-mute);">3 ONLINE</span>
+        </div>
+        
+        <div class="friends-list">
+          <div class="friend-item">
+            <div class="fi-left">
+              <div class="fi-av" style="background:#FFF9C4;">🦊</div>
+              <div><div class="fi-name">chaos.exe</div><div class="fi-status online">Playing UNO</div></div>
+            </div>
+            <button class="fi-btn" title="Join Game"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M6 1l5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+          <div class="friend-item">
+            <div class="fi-left">
+              <div class="fi-av" style="background:#E8EAF6;">🐺</div>
+              <div><div class="fi-name">nxght_owl</div><div class="fi-status online">In Lobby</div></div>
+            </div>
+            <button class="fi-btn" title="Join Game"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 6h10M6 1l5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+          <div class="friend-item">
+            <div class="fi-left">
+              <div class="fi-av" style="background:#E1BEE7;">🌙</div>
+              <div><div class="fi-name">pixel_witch</div><div class="fi-status online">Online</div></div>
+            </div>
+            <button class="fi-btn" title="Message"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 3a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H4l-3 2V3z"/></svg></button>
+          </div>
+          <div class="friend-item" style="opacity:0.6;">
+            <div class="fi-left">
+              <div class="fi-av" style="background:var(--bg);">🌊</div>
+              <div><div class="fi-name">void.runner</div><div class="fi-status offline">Last seen 2d ago</div></div>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn btn-outline" style="width:100%;margin-top:20px;font-size:12px;padding:8px;">View All Friends →</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

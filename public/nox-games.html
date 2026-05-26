@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>NOX — Games Library</title>
+  <link rel="stylesheet" href="nox-shared.css"/>
+  <style>
+    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    
+    .games-layout {
+      display: flex; flex: 1; overflow: hidden;
+    }
+
+    /* ── SIDEBAR FILTER ── */
+    .filter-sidebar {
+      width: 260px; flex-shrink: 0;
+      background: var(--white);
+      border-right: 2px solid var(--ink);
+      padding: 32px 24px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 32px;
+    }
+    
+    .filter-group-title {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--ink-mute); margin-bottom: 12px;
+    }
+
+    .search-box {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border: 2px solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--bg); box-shadow: 2px 2px 0 var(--ink);
+      margin-bottom: 8px;
+    }
+    .search-box input {
+      border: none; outline: none; background: transparent;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      width: 100%; color: var(--ink);
+    }
+    .search-box input::placeholder { color: var(--ink-mute); }
+
+    .filter-list { display: flex; flex-direction: column; gap: 6px; }
+    .filter-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 14px; font-weight: 500; color: var(--ink-mid);
+      transition: .15s; border-left: 3px solid transparent;
+    }
+    .filter-item:hover { background: rgba(20,24,16,.04); color: var(--ink); }
+    .filter-item.active {
+      background: rgba(190,255,60,.15); color: var(--ink); font-weight: 700;
+      border-left-color: var(--lime-dk);
+    }
+    .filter-count {
+      margin-left: auto; font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; color: var(--ink-mute);
+      background: rgba(20,24,16,.06); padding: 2px 6px; border-radius: 4px;
+    }
+
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .toggle-switch {
+      width: 36px; height: 20px; border: 2px solid var(--ink);
+      border-radius: var(--radius-pill); position: relative;
+      background: var(--bg); transition: .2s;
+    }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 12px; height: 12px; background: var(--ink);
+      border-radius: 50%; transition: .2s;
+    }
+    .toggle-row input { display: none; }
+    .toggle-row input:checked + .toggle-switch { background: var(--lime); }
+    .toggle-row input:checked + .toggle-switch::after { transform: translateX(16px); }
+
+    /* ── MAIN CONTENT ── */
+    .games-main {
+      flex: 1; padding: 48px; overflow-y: auto; position: relative;
+    }
+    
+    .breadcrumb {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--ink-mute); margin-bottom: 24px;
+    }
+    .breadcrumb a { color: var(--ink-mid); text-decoration: none; font-weight: 500; }
+    .breadcrumb a:hover { color: var(--ink); text-decoration: underline; }
+
+    .games-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px; margin-bottom: 56px;
+    }
+
+    .game-card {
+      background: var(--white); border: var(--card-border);
+      border-radius: var(--radius); box-shadow: var(--card-shadow);
+      overflow: hidden; transition: .2s; display: flex; flex-direction: column;
+    }
+    .game-card:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
+    .gc-hero {
+      height: 140px; display: flex; align-items: center; justify-content: center;
+      font-size: 56px; border-bottom: 2px solid var(--ink); position: relative;
+    }
+    .gc-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+    .gc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .gc-name { font-weight: 700; font-size: 18px; line-height: 1.2; }
+    .gc-stats {
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: var(--ink-mute); display: flex; align-items: center; gap: 6px; margin-bottom: 16px;
+    }
+    .gc-actions { display: flex; gap: 8px; margin-top: auto; }
+    .gc-btn { flex: 1; padding: 10px 0; text-align: center; font-size: 13px; }
+
+    /* Specific Game Colors */
+    .bg-party { background: linear-gradient(135deg, #FFE0B2, #FFB74D); }
+    .bg-draw { background: linear-gradient(135deg, #E8F5E9, #A5D6A7); }
+    .bg-mafia { background: linear-gradient(135deg, #E0E0E0, #9E9E9E); }
+    .bg-tam { background: linear-gradient(135deg, #FFF9C4, #FFF176); }
+    .bg-sus { background: linear-gradient(135deg, #FFCDD2, #E57373); }
+    
+    .bg-chess { background: linear-gradient(135deg, #E8EAF6, #9FA8DA); }
+    .bg-ludo { background: linear-gradient(135deg, #FCE4EC, #F48FB1); }
+    .bg-pool { background: linear-gradient(135deg, #CFD8DC, #90A4AE); }
+    .bg-snake { background: linear-gradient(135deg, #DCEDC8, #8BC34A); }
+    .bg-cards { background: linear-gradient(135deg, #D7CCC8, #A1887F); }
+
+    .bg-run { background: linear-gradient(135deg, #E1BEE7, #BA68C8); }
+    .bg-react { background: linear-gradient(135deg, #B2EBF2, #4DD0E1); }
+    .bg-stack { background: linear-gradient(135deg, #FFF3E0, #FFB74D); }
+    .bg-puzzle { background: linear-gradient(135deg, #C5CAE9, #7986CB); }
+
+  </style>
+</head>
+<body>
+
+<nav class="nox-nav">
+  <a href="nox.html" class="nav-logo">NO<span class="logo-x">X</span><span class="logo-doodle">!</span></a>
+  <ul class="nav-links">
+    <li><a href="nox-dashboard.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1.5 5.5L7 1.5l5.5 4V13H9V9.5H5V13H1.5V5.5z"/></svg>Home</a></li>
+    <li><a href="nox-games.html" class="active">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="1.5" y="4.5" width="11" height="7" rx="1.5"/><path d="M9 4.5V3a2 2 0 0 0-4 0v1.5M5 8h1.5M6.5 8V9.5M9.5 8h1"/></svg>Games</a></li>
+    <li><a href="nox-lobby.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5.5 5.5L9.5 7 5.5 8.5V5.5z" fill="currentColor" stroke="none"/></svg>Lobby</a></li>
+    <li><a href="nox-leaderboard.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 1.5l1.2 2.8 3 .3-2.2 2 .7 3L7 8.2 4.3 9.6l.7-3L2.8 4.6l3-.3z"/></svg>Leaderboard</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="online-pill"><span class="pulse-green"></span><span>2,847 online</span></div>
+    <a href="nox-profile.html" class="btn btn-outline" style="padding:7px 16px;font-size:12px;">😈 Ravenous_404</a>
+  </div>
+</nav>
+
+<div class="games-layout">
+  <!-- SIDEBAR FILTER -->
+  <aside class="filter-sidebar">
+    <div>
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="4"/><path d="m10 10 2.5 2.5" stroke-linecap="round"/></svg>
+        <input type="text" placeholder="Search games..." />
+      </div>
+    </div>
+
+    <div>
+      <div class="filter-group-title">Categories</div>
+      <div class="filter-list">
+        <div class="filter-item active" onclick="activateFilter(this)">
+          <span style="font-size:16px;">🎮</span> All Games <span class="filter-count">13</span>
+        </div>
+        <div class="filter-item" onclick="activateFilter(this)">
+          <span style="font-size:16px;">🎉</span> Party Games <span class="filter-count">5</span>
+        </div>
+        <div class="filter-item" onclick="activateFilter(this)">
+          <span style="font-size:16px;">♟️</span> Strategy <span class="filter-count">4</span>
+        </div>
+        <div class="filter-item" onclick="activateFilter(this)">
+          <span style="font-size:16px;">⚡</span> Solo & Quick <span class="filter-count">4</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="filter-group-title">Play Style</div>
+      <div class="filter-list">
+        <div class="filter-item" onclick="activateFilter(this, true)">
+          <span style="font-size:16px;">🔥</span> Hot Right Now
+        </div>
+        <div class="filter-item" onclick="activateFilter(this, true)">
+          <span style="font-size:16px;">🏆</span> Ranked Modes
+        </div>
+        <div class="filter-item" onclick="activateFilter(this, true)">
+          <span style="font-size:16px;">✨</span> New Releases
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="filter-group-title">Preferences</div>
+      <label class="toggle-row" style="margin-bottom:12px;">
+        <span>With Friends Only</span>
+        <input type="checkbox" />
+        <div class="toggle-switch"></div>
+      </label>
+      <label class="toggle-row">
+        <span>Quick Match Only</span>
+        <input type="checkbox" />
+        <div class="toggle-switch"></div>
+      </label>
+    </div>
+    
+    <div style="margin-top:auto;">
+      <div class="doodle" style="position:static;font-size:24px;color:var(--coral);--r:-10deg;margin-bottom:10px;text-align:center;">need ideas?</div>
+      <button class="btn btn-dark" style="width:100%;justify-content:center;">Surprise Me 🎲</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="games-main">
+    
+    <!-- DOODLES -->
+    <div class="doodle" style="top:60px;right:100px;font-size:32px;color:var(--lav);opacity:.4;--r:15deg;">★</div>
+    <div class="doodle" style="top:300px;left:50%;font-size:24px;color:var(--coral);opacity:.3;--r:-20deg;">⚡</div>
+    
+    <div class="breadcrumb">
+      <a href="nox.html">Home</a> <span>/</span> <span style="color:var(--ink);">Games</span>
+    </div>
+
+    <div class="sec-eyebrow">04 — GAMES LIBRARY</div>
+    <h1 class="sec-title">Pick Your <span class="squig-underline-coral">Weapon.</span></h1>
+
+    <!-- PARTY GAMES -->
+    <h2 class="font-serif" style="font-size:32px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+      Party Games 🎉
+      <span class="font-doodle" style="font-size:18px;color:var(--ink-mute);transform:rotate(-5deg);margin-top:8px;">friendships will end.</span>
+    </h2>
+    <div class="games-grid">
+      <div class="game-card">
+        <div class="gc-hero bg-party">🃏
+          <div class="doodle font-doodle" style="bottom:10px;right:10px;font-size:16px;color:var(--ink);--r:-15deg;background:white;padding:2px 8px;border:2px solid var(--ink);border-radius:999px;">most popular!</div>
+        </div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">UNO</div><span class="badge badge-hot">🔥 Hot</span></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 14.2k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="game-card">
+        <div class="gc-hero bg-draw">✏️</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Skribbl.io</div><span class="badge badge-trending">Trending</span></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 8.9k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-mafia">🐺</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Mafia / Werewolf</div><span class="badge badge-new">✨ New</span></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 3.2k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-tam">🎱</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Tambola</div></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 2.1k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="game-card">
+        <div class="gc-hero bg-sus">🛸</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Who's Sus?</div><span class="badge badge-new">✨ New</span></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 1.8k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRATEGY -->
+    <h2 class="font-serif" style="font-size:32px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+      Strategy & Classics ♟️
+      <span class="font-doodle" style="font-size:18px;color:var(--ink-mute);transform:rotate(3deg);margin-top:8px;">big brain energy</span>
+    </h2>
+    <div class="games-grid">
+      <div class="game-card">
+        <div class="gc-hero bg-chess">♟️</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Chess</div><span class="badge badge-ranked">Ranked</span></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 5.8k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-ludo">🎲</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Ludo</div><span class="badge badge-hot">🔥 Hot</span></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 6.3k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-pool">🎱</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">8-Ball Pool</div></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 4.1k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-snake">🐍</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Snake & Ladder</div></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 2.8k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-cards">🃏</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">29 Card Game</div><span class="badge badge-ranked">Ranked</span></div>
+          <div class="gc-stats"><span class="pulse-green"></span> 1.4k playing</div>
+          <div class="gc-actions">
+            <a href="nox-lobby.html" class="btn btn-outline gc-btn">Room</a>
+            <a href="nox-lobby.html" class="btn btn-lime gc-btn">Play →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOLO & QUICK -->
+    <h2 class="font-serif" style="font-size:32px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+      Solo & Quick ⚡
+      <span class="font-doodle" style="font-size:18px;color:var(--ink-mute);transform:rotate(-4deg);margin-top:8px;">while waiting in lobby</span>
+    </h2>
+    <div class="games-grid">
+      <div class="game-card">
+        <div class="gc-hero bg-run">🏃‍♂️</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Endless Runner</div><span class="badge" style="background:var(--lav);color:white;">Daily</span></div>
+          <div class="gc-stats">Single Player</div>
+          <div class="gc-actions">
+            <a href="#" class="btn btn-lime gc-btn" style="width:100%;">Play Solo →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-react">⚡</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Reaction Speed</div><span class="badge badge-ranked">Ranked</span></div>
+          <div class="gc-stats">Global Leaderboard</div>
+          <div class="gc-actions">
+            <a href="#" class="btn btn-lime gc-btn" style="width:100%;">Test Reflexes →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-stack">🧱</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Stack Game</div></div>
+          <div class="gc-stats">Quick Match</div>
+          <div class="gc-actions">
+            <a href="#" class="btn btn-lime gc-btn" style="width:100%;">Play Solo →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card">
+        <div class="gc-hero bg-puzzle">🧩</div>
+        <div class="gc-body">
+          <div class="gc-top"><div class="gc-name">Daily Puzzle</div><span class="badge badge-hot">🔥 Streak: 7</span></div>
+          <div class="gc-stats">Updates daily</div>
+          <div class="gc-actions">
+            <a href="#" class="btn btn-lime gc-btn" style="width:100%;">Solve Now →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </main>
+</div>
+
+<script>
+function activateFilter(el, isGroup2 = false) {
+  if (isGroup2) {
+    el.classList.toggle('active');
+  } else {
+    document.querySelectorAll('.filter-list:first-child .filter-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+}
+</script>
+</body>
+</html>

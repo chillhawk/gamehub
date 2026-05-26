@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOX — Leaderboard & Tournaments</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..900;1,9..40,300..900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#F7F3EC; --white:#FFFFFF; --ink:#141810; --ink-mid:#3A3D35; --ink-mute:#888C7E;
+      --lime:#BEFF3C; --lime-dk:#8FB800; --lav:#9F8FFF; --lav-lt:#EAE6FF;
+      --coral:#FF5A5A; --gold:#F5A623; --silver:#9B9B9B; --bronze:#CD7F32;
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.03; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:256px; }
+
+    /* NAV */
+    nav { display:flex; align-items:center; justify-content:space-between; padding:0 48px; height:64px; background:rgba(247,243,236,.9); backdrop-filter:blur(16px); border-bottom:1px solid rgba(20,24,16,.1); position:sticky; top:0; z-index:100; }
+    .nav-logo { font-family:'DM Sans',sans-serif; font-weight:900; font-size:22px; letter-spacing:-0.05em; text-decoration:none; color:var(--ink); }
+    .nav-logo span { color:var(--lime-dk); }
+    nav ul { display:flex; gap:28px; list-style:none; }
+    nav a { font-size:14px; font-weight:500; color:var(--ink-mid); text-decoration:none; }
+    nav a.active, nav a:hover { color:var(--ink); }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border-radius:999px; font-family:'DM Sans',sans-serif; font-weight:700; font-size:13px; cursor:pointer; border:2px solid var(--ink); text-decoration:none; transition:.15s; }
+    .btn-lime { background:var(--lime); box-shadow:3px 3px 0 var(--ink); }
+    .btn-lime:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); }
+
+    /* PAGE */
+    .page { max-width:1280px; margin:0 auto; padding:48px 48px; }
+    .page-header { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:40px; }
+    .page-eyebrow { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px; }
+    .page-title { font-family:'Instrument Serif',serif; font-style:italic; font-size:52px; line-height:1.05; }
+
+    /* TOURNAMENT BANNER */
+    .tournament-banner {
+      background:var(--ink); color:white; border-radius:20px; border:2px solid var(--ink);
+      box-shadow:6px 6px 0 var(--lime); padding:32px 40px;
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:40px; position:relative; overflow:hidden;
+    }
+    .tb-deco { position:absolute; font-size:120px; opacity:.05; pointer-events:none; }
+    .tb-deco-1 { right:-20px; top:-20px; }
+    .tb-deco-2 { left:-10px; bottom:-30px; }
+    .tb-left {}
+    .tb-label { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--coral); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+    .tb-dot { width:6px; height:6px; border-radius:50%; background:var(--coral); animation:pulse-red 1.2s infinite; }
+    @keyframes pulse-red { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
+    .tb-title { font-family:'Instrument Serif',serif; font-style:italic; font-size:36px; margin-bottom:6px; }
+    .tb-sub { font-size:14px; color:rgba(255,255,255,.6); margin-bottom:20px; }
+    .tb-prize { display:inline-flex; align-items:center; gap:8px; padding:8px 18px; background:rgba(190,255,60,.12); border:1px solid rgba(190,255,60,.3); border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:var(--lime); }
+    .tb-right { text-align:center; }
+    .tb-countdown-label { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,.4); margin-bottom:8px; }
+    .tb-countdown { display:flex; gap:12px; margin-bottom:20px; }
+    .countdown-unit { text-align:center; }
+    .countdown-num { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; line-height:1; display:block; background:rgba(255,255,255,.08); border-radius:8px; padding:8px 14px; }
+    .countdown-lbl { font-size:10px; color:rgba(255,255,255,.4); margin-top:4px; font-family:'JetBrains Mono',monospace; letter-spacing:0.05em; text-transform:uppercase; }
+    .tb-enter-btn { display:inline-flex; align-items:center; gap:8px; padding:12px 28px; background:var(--lime); border:2px solid var(--lime); border-radius:999px; font-family:'DM Sans',sans-serif; font-weight:700; font-size:14px; color:var(--ink); cursor:pointer; transition:.15s; box-shadow:0 0 30px rgba(190,255,60,.3); }
+    .tb-enter-btn:hover { transform:translateY(-2px); box-shadow:0 0 50px rgba(190,255,60,.5); }
+
+    /* MAIN GRID */
+    .main-grid { display:grid; grid-template-columns:1fr 320px; gap:28px; }
+
+    /* LEADERBOARD */
+    .leaderboard-card { background:var(--white); border:2px solid var(--ink); border-radius:20px; box-shadow:4px 4px 0 var(--ink); overflow:hidden; }
+    .lb-header { padding:24px 28px 0; display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .lb-title { font-family:'Instrument Serif',serif; font-style:italic; font-size:28px; }
+    .lb-tabs { display:flex; gap:4px; }
+    .lb-tab { padding:6px 16px; border-radius:999px; font-size:12px; font-weight:700; cursor:pointer; border:2px solid transparent; transition:.15s; }
+    .lb-tab.active { background:var(--lime); border-color:var(--ink); box-shadow:2px 2px 0 var(--ink); }
+    .lb-tab:not(.active):hover { border-color:rgba(20,24,16,.2); }
+
+    /* Podium */
+    .podium { display:flex; align-items:flex-end; justify-content:center; gap:12px; padding:24px 28px; background:linear-gradient(to bottom, rgba(159,143,255,.06), transparent); }
+    .podium-place { display:flex; flex-direction:column; align-items:center; flex:1; }
+    .podium-rank { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; margin-bottom:8px; }
+    .podium-avatar { font-size:36px; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); margin-bottom:8px; }
+    .podium-place.first .podium-avatar { width:80px; height:80px; font-size:44px; border-color:var(--gold); box-shadow:0 0 0 4px rgba(245,166,35,.2), 3px 3px 0 var(--gold); }
+    .podium-place.second .podium-avatar { border-color:var(--silver); }
+    .podium-place.third .podium-avatar { border-color:var(--bronze); }
+    .podium-name { font-weight:700; font-size:13px; text-align:center; margin-bottom:3px; }
+    .podium-score { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-mute); }
+    .podium-bar { width:100%; border-radius:8px 8px 0 0; border:2px solid var(--ink); margin-top:8px; }
+    .podium-place.first .podium-bar { height:60px; background:rgba(245,166,35,.15); border-color:var(--gold); }
+    .podium-place.second .podium-bar { height:40px; background:rgba(155,155,155,.15); border-color:var(--silver); }
+    .podium-place.third .podium-bar { height:28px; background:rgba(205,127,50,.15); border-color:var(--bronze); }
+    .podium-medal { font-size:20px; }
+
+    /* Leaderboard Table */
+    .lb-table { width:100%; border-collapse:collapse; }
+    .lb-row { display:grid; grid-template-columns:44px 1fr 80px 80px 80px; align-items:center; padding:12px 28px; border-top:1px solid rgba(20,24,16,.07); transition:.15s; }
+    .lb-row:hover { background:rgba(20,24,16,.03); }
+    .lb-row.me { background:rgba(190,255,60,.1); border-top-color:var(--lime); border-bottom:1px solid var(--lime); }
+    .lb-rank { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:var(--ink-mute); }
+    .lb-player { display:flex; align-items:center; gap:10px; }
+    .lb-av { width:32px; height:32px; border-radius:50%; font-size:18px; display:flex; align-items:center; justify-content:center; background:var(--lav-lt); border:2px solid var(--ink); }
+    .lb-pname { font-weight:700; font-size:13px; }
+    .lb-clan { font-size:10px; color:var(--ink-mute); font-family:'JetBrains Mono',monospace; }
+    .lb-stat { font-family:'JetBrains Mono',monospace; font-size:12px; text-align:right; }
+    .lb-stat.wins { color:var(--lime-dk); font-weight:700; }
+    .lb-stat.wr { color:var(--ink-mid); }
+    .lb-stat.xp { color:var(--lav); font-weight:600; }
+    .lb-col-header { display:grid; grid-template-columns:44px 1fr 80px 80px 80px; padding:8px 28px; }
+    .lb-col-label { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-mute); text-align:right; }
+    .lb-col-label:nth-child(2) { text-align:left; }
+
+    /* MY RANK chip */
+    .my-rank-chip { margin:16px 28px; padding:14px 18px; background:rgba(190,255,60,.12); border:2px solid var(--lime-dk); border-radius:12px; display:flex; align-items:center; justify-content:space-between; }
+    .my-rank-left { display:flex; align-items:center; gap:10px; }
+    .my-rank-num { font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:var(--lime-dk); }
+    .my-rank-label { font-size:12px; color:var(--ink-mid); }
+    .my-rank-sub { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--ink-mute); }
+    .my-rank-btn { padding:7px 16px; background:var(--lime); border:2px solid var(--ink); border-radius:999px; font-weight:700; font-size:12px; cursor:pointer; box-shadow:2px 2px 0 var(--ink); }
+
+    /* SIDEBAR */
+    .side-col { display:flex; flex-direction:column; gap:20px; }
+
+    .side-card { background:var(--white); border:2px solid var(--ink); border-radius:16px; box-shadow:3px 3px 0 var(--ink); padding:20px; }
+    .side-card-title { font-family:'Instrument Serif',serif; font-style:italic; font-size:20px; margin-bottom:16px; }
+
+    /* Upcoming Tournaments */
+    .upcoming-item { display:flex; gap:12px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid rgba(20,24,16,.08); }
+    .upcoming-item:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+    .upcoming-date { text-align:center; min-width:36px; }
+    .upcoming-day { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:700; line-height:1; }
+    .upcoming-month { font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; color:var(--ink-mute); }
+    .upcoming-info {}
+    .upcoming-name { font-weight:700; font-size:13px; margin-bottom:3px; }
+    .upcoming-game { font-size:11px; color:var(--ink-mute); margin-bottom:5px; }
+    .upcoming-badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:9px; font-weight:700; font-family:'DM Sans',sans-serif; letter-spacing:0.05em; text-transform:uppercase; }
+    .upcoming-badge.open { background:rgba(190,255,60,.2); color:var(--lime-dk); border:1px solid var(--lime-dk); }
+    .upcoming-badge.soon { background:var(--lav-lt); color:#4B3FBF; border:1px solid var(--lav); }
+
+    /* Hall of Fame */
+    .hof-item { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .hof-medal { font-size:20px; min-width:24px; }
+    .hof-av { width:32px; height:32px; border-radius:50%; font-size:18px; display:flex; align-items:center; justify-content:center; background:var(--lav-lt); border:2px solid var(--ink); }
+    .hof-info { flex:1; }
+    .hof-name { font-weight:700; font-size:12px; }
+    .hof-title { font-size:10px; color:var(--ink-mute); }
+    .hof-score { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:var(--lime-dk); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="nox.html" class="nav-logo">NO<span>X</span></a>
+  <ul>
+    <li><a href="nox-dashboard.html">Home</a></li>
+    <li><a href="#">Games</a></li>
+    <li><a href="#" class="active">Leaderboard</a></li>
+    <li><a href="#">Tournaments</a></li>
+  </ul>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-mute);">Ravenous_404 · Lv.23</span>
+    <a href="#" class="btn btn-lime">
+      Play Now
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-eyebrow">05 — Rankings</div>
+      <h1 class="page-title">Leaderboard &amp; Tournaments</h1>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-mute);">Season 4 · Week 18</div>
+    </div>
+  </div>
+
+  <!-- Tournament Banner -->
+  <div class="tournament-banner">
+    <div class="tb-deco tb-deco-1">🏆</div>
+    <div class="tb-deco tb-deco-2">⚡</div>
+
+    <div class="tb-left">
+      <div class="tb-label"><div class="tb-dot"></div>Registration Open</div>
+      <div class="tb-title">🎯 Weekly Chaos Tournament</div>
+      <div class="tb-sub">10 games · Starts Friday · Open to all ranks</div>
+      <div class="tb-prize">🏆 Prize Pool — ₹5,000 in Rewards + Exclusive Badges</div>
+    </div>
+
+    <div class="tb-right">
+      <div class="tb-countdown-label">Tournament Starts In</div>
+      <div class="tb-countdown">
+        <div class="countdown-unit">
+          <span class="countdown-num">02</span>
+          <div class="countdown-lbl">Days</div>
+        </div>
+        <div class="countdown-unit">
+          <span class="countdown-num">14</span>
+          <div class="countdown-lbl">Hrs</div>
+        </div>
+        <div class="countdown-unit">
+          <span class="countdown-num">32</span>
+          <div class="countdown-lbl">Min</div>
+        </div>
+      </div>
+      <button class="tb-enter-btn">
+        Enter Tournament
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+
+    <!-- Leaderboard -->
+    <div class="leaderboard-card">
+      <div class="lb-header">
+        <div class="lb-title">Global Rankings</div>
+        <div class="lb-tabs">
+          <div class="lb-tab active">All Time</div>
+          <div class="lb-tab">This Week</div>
+          <div class="lb-tab">UNO</div>
+          <div class="lb-tab">Chess</div>
+        </div>
+      </div>
+
+      <!-- Podium -->
+      <div class="podium">
+        <!-- 2nd Place -->
+        <div class="podium-place second">
+          <div class="podium-medal">🥈</div>
+          <div class="podium-rank mono">#2</div>
+          <div class="podium-avatar">🦊</div>
+          <div class="podium-name">chaos.exe</div>
+          <div class="podium-score">21,890 XP</div>
+          <div class="podium-bar"></div>
+        </div>
+        <!-- 1st Place -->
+        <div class="podium-place first">
+          <div class="podium-medal">🥇</div>
+          <div class="podium-rank mono" style="color:var(--gold);font-size:13px;">#1</div>
+          <div class="podium-avatar">🐺</div>
+          <div class="podium-name">nxght_owl</div>
+          <div class="podium-score">29,340 XP</div>
+          <div class="podium-bar"></div>
+        </div>
+        <!-- 3rd Place -->
+        <div class="podium-place third">
+          <div class="podium-medal">🥉</div>
+          <div class="podium-rank mono">#3</div>
+          <div class="podium-avatar">🌙</div>
+          <div class="podium-name">pixel_witch</div>
+          <div class="podium-score">18,450 XP</div>
+          <div class="podium-bar"></div>
+        </div>
+      </div>
+
+      <!-- Col Headers -->
+      <div class="lb-col-header">
+        <div class="lb-col-label">#</div>
+        <div class="lb-col-label" style="text-align:left;">Player</div>
+        <div class="lb-col-label">Wins</div>
+        <div class="lb-col-label">W/R</div>
+        <div class="lb-col-label">XP</div>
+      </div>
+
+      <!-- Rows -->
+      <div class="lb-row">
+        <div class="lb-rank">4</div>
+        <div class="lb-player">
+          <div class="lb-av">🎭</div>
+          <div><div class="lb-pname">void.runner</div><div class="lb-clan">The Untamed 🐺</div></div>
+        </div>
+        <div class="lb-stat wins">412</div>
+        <div class="lb-stat wr">58%</div>
+        <div class="lb-stat xp">16.2k</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">5</div>
+        <div class="lb-player">
+          <div class="lb-av">⚡</div>
+          <div><div class="lb-pname">brxnstorm</div><div class="lb-clan">Solo</div></div>
+        </div>
+        <div class="lb-stat wins">387</div>
+        <div class="lb-stat wr">63%</div>
+        <div class="lb-stat xp">15.8k</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">6</div>
+        <div class="lb-player">
+          <div class="lb-av">🧠</div>
+          <div><div class="lb-pname">braincell.exe</div><div class="lb-clan">Galaxy Brains</div></div>
+        </div>
+        <div class="lb-stat wins">341</div>
+        <div class="lb-stat wr">51%</div>
+        <div class="lb-stat xp">14.1k</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">7</div>
+        <div class="lb-player">
+          <div class="lb-av">🌊</div>
+          <div><div class="lb-pname">deep.waves</div><div class="lb-clan">Solo</div></div>
+        </div>
+        <div class="lb-stat wins">298</div>
+        <div class="lb-stat wr">47%</div>
+        <div class="lb-stat xp">12.3k</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">8</div>
+        <div class="lb-player">
+          <div class="lb-av">🦋</div>
+          <div><div class="lb-pname">flutterkill</div><div class="lb-clan">Chaos Corp</div></div>
+        </div>
+        <div class="lb-stat wins">271</div>
+        <div class="lb-stat wr">44%</div>
+        <div class="lb-stat xp">11.8k</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">9</div>
+        <div class="lb-player">
+          <div class="lb-av">🎯</div>
+          <div><div class="lb-pname">sniper_404</div><div class="lb-clan">Solo</div></div>
+        </div>
+        <div class="lb-stat wins">244</div>
+        <div class="lb-stat wr">41%</div>
+        <div class="lb-stat xp">10.4k</div>
+      </div>
+      <div class="lb-row">
+        <div class="lb-rank">10</div>
+        <div class="lb-player">
+          <div class="lb-av">🔥</div>
+          <div><div class="lb-pname">thermite.x</div><div class="lb-clan">The Untamed 🐺</div></div>
+        </div>
+        <div class="lb-stat wins">219</div>
+        <div class="lb-stat wr">39%</div>
+        <div class="lb-stat xp">9.7k</div>
+      </div>
+
+      <!-- Your rank -->
+      <div class="my-rank-chip">
+        <div class="my-rank-left">
+          <div class="my-rank-num">#142</div>
+          <div>
+            <div class="my-rank-label" style="font-weight:700;">Ravenous_404 (You) 😈</div>
+            <div class="my-rank-sub">61% WR · 847 games · Top 3% this week ↑</div>
+          </div>
+        </div>
+        <button class="my-rank-btn">View Profile →</button>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="side-col">
+
+      <!-- Upcoming Tournaments -->
+      <div class="side-card">
+        <div class="side-card-title">Upcoming Events</div>
+
+        <div class="upcoming-item">
+          <div class="upcoming-date">
+            <div class="upcoming-day">23</div>
+            <div class="upcoming-month">May</div>
+          </div>
+          <div class="upcoming-info">
+            <div class="upcoming-name">🎯 Weekly Chaos Cup</div>
+            <div class="upcoming-game">UNO · All Ranks</div>
+            <span class="upcoming-badge open">Open</span>
+          </div>
+        </div>
+
+        <div class="upcoming-item">
+          <div class="upcoming-date">
+            <div class="upcoming-day">01</div>
+            <div class="upcoming-month">Jun</div>
+          </div>
+          <div class="upcoming-info">
+            <div class="upcoming-name">♟️ Chess Masters Invitational</div>
+            <div class="upcoming-game">Chess · Rank 50+ only</div>
+            <span class="upcoming-badge soon">Soon</span>
+          </div>
+        </div>
+
+        <div class="upcoming-item">
+          <div class="upcoming-date">
+            <div class="upcoming-day">07</div>
+            <div class="upcoming-month">Jun</div>
+          </div>
+          <div class="upcoming-info">
+            <div class="upcoming-name">🎲 Ludo World Championship</div>
+            <div class="upcoming-game">Ludo · All Ranks · Prize Pool</div>
+            <span class="upcoming-badge open">Open</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Hall of Fame -->
+      <div class="side-card">
+        <div class="side-card-title">Hall of Fame</div>
+
+        <div class="hof-item">
+          <div class="hof-medal">🥇</div>
+          <div class="hof-av">🐺</div>
+          <div class="hof-info">
+            <div class="hof-name">nxght_owl</div>
+            <div class="hof-title">Season 3 Champion</div>
+          </div>
+          <div class="hof-score">29.3k</div>
+        </div>
+
+        <div class="hof-item">
+          <div class="hof-medal">🥈</div>
+          <div class="hof-av">🦊</div>
+          <div class="hof-info">
+            <div class="hof-name">chaos.exe</div>
+            <div class="hof-title">Season 2 Champion</div>
+          </div>
+          <div class="hof-score">21.8k</div>
+        </div>
+
+        <div class="hof-item">
+          <div class="hof-medal">🥉</div>
+          <div class="hof-av">🌙</div>
+          <div class="hof-info">
+            <div class="hof-name">pixel_witch</div>
+            <div class="hof-title">Season 1 Champion</div>
+          </div>
+          <div class="hof-score">18.4k</div>
+        </div>
+      </div>
+
+      <!-- Motivational Card -->
+      <div class="side-card" style="background:var(--lime);border-color:var(--ink);box-shadow:3px 3px 0 var(--ink);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(20,24,16,.5);margin-bottom:8px;">YOUR RANK</div>
+        <div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;margin-bottom:8px;">#142 · Top 3% this week</div>
+        <div style="font-size:13px;color:var(--ink-mid);margin-bottom:16px;line-height:1.5;">You're 3 wins away from breaking into the Top 100. Keep going!</div>
+        <button style="width:100%;padding:10px;background:var(--ink);color:white;border:2px solid var(--ink);border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;box-shadow:2px 2px 0 rgba(20,24,16,.3);">
+          Find a Game →
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

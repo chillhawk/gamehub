@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {},
+
+  allowedDevOrigins: ["*.trycloudflare.com"],
+
+  images: {
+    domains: [],
+  },
+
+  devIndicators: false,
 };
 
 export default nextConfig;
