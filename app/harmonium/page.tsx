@@ -23,18 +23,69 @@ export default function JamLoungePage() {
     : [{ id: 'guest', name: 'Guest', avatar: 'Ghost', isBot: false, skillLevel: 1 }]
 
   return (
-    <main style={{ minHeight: 'calc(100vh - 66px)', background: 'var(--bg)', padding: '24px' }}>
+    <main style={{ 
+      minHeight: 'calc(100vh - 66px)', 
+      background: 'linear-gradient(180deg, #06070a 0%, #0c0d12 100%)', 
+      padding: '24px',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Deep Studio Ambient Glows */}
+      <div style={{
+        position: 'absolute',
+        top: '-15%',
+        left: '15%',
+        width: '600px',
+        height: '600px',
+        background: 'radial-gradient(circle, rgba(159, 143, 255, 0.05) 0%, transparent 75%)',
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
+      <div style={{
+        position: 'absolute',
+        bottom: '-15%',
+        right: '10%',
+        width: '600px',
+        height: '600px',
+        background: 'radial-gradient(circle, rgba(190, 255, 60, 0.04) 0%, transparent 75%)',
+        pointerEvents: 'none',
+        zIndex: 0
+      }} />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
+        style={{ position: 'relative', zIndex: 1 }}
       >
         {/* Header bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', maxWidth: '1400px', margin: '0 auto 24px auto' }}>
-          <Link href="/dashboard" className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Link href="/dashboard" className="btn" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            color: 'rgba(255, 255, 255, 0.85)',
+            borderRadius: '14px',
+            padding: '10px 22px',
+            fontWeight: 800,
+            fontSize: '13px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            backdropFilter: 'blur(8px)',
+            transition: 'all 0.2s ease'
+          }}>
             <ArrowLeft size={16} /> Back to Hub
           </Link>
-          <h1 style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontSize: '36px', lineHeight: 1, color: 'var(--ink)' }}>
+          <h1 style={{ 
+            fontFamily: '"Instrument Serif", serif', 
+            fontStyle: 'italic', 
+            fontSize: '40px', 
+            lineHeight: 1, 
+            color: '#ffffff',
+            textShadow: '0 0 25px rgba(255,255,255,0.06)'
+          }}>
             Jam Lounge
           </h1>
           <div style={{ width: '130px' }} />
@@ -44,10 +95,6 @@ export default function JamLoungePage() {
         <div style={{
           maxWidth: '1400px',
           margin: '0 auto',
-          background: 'var(--white)',
-          borderRadius: 'var(--radius)',
-          border: '4px solid var(--ink)',
-          boxShadow: '8px 8px 0 var(--ink)',
           overflow: 'hidden'
         }}>
           <Harmonium
@@ -56,34 +103,6 @@ export default function JamLoungePage() {
             opponentName={undefined}
             lobbyPlayers={localPlayers}
           />
-        </div>
-
-        {/* Keyboard hint footer */}
-        <div style={{
-          maxWidth: '1400px',
-          margin: '20px auto 0',
-          textAlign: 'center',
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '11px',
-          fontWeight: 700,
-          color: 'var(--ink-mute)',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '24px',
-          flexWrap: 'wrap'
-        }}>
-          <span>
-            <span style={{ background: 'var(--lime)', padding: '2px 8px', borderRadius: '4px', border: '1.5px solid var(--ink)', color: 'var(--ink)', marginRight: '6px' }}>Q W E R T Y U I O P</span>
-            Play Notes
-          </span>
-          <span>
-            <span style={{ background: 'var(--lav-lt)', padding: '2px 8px', borderRadius: '4px', border: '1.5px solid var(--ink)', color: 'var(--ink)', marginRight: '6px' }}>2 3 5 6 7 9 0</span>
-            Sharps / Flats
-          </span>
-          <span>
-            <span style={{ background: 'var(--white)', padding: '2px 8px', borderRadius: '4px', border: '1.5px solid var(--ink)', color: 'var(--ink)', marginRight: '6px' }}>SPACE</span>
-            Pump Bellows
-          </span>
         </div>
 
       </motion.div>
