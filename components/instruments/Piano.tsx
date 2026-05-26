@@ -106,10 +106,10 @@ export default function Piano() {
     return { key: bk, leftIndex: prevWhite };
   });
 
-  const S: Record<string, React.CSSProperties> = {
-    wrap: { width: '100%', maxWidth: 900, margin: '0 auto' },
+  const S = {
+    wrap: { width: '100%', maxWidth: 900, margin: '0 auto' } as React.CSSProperties,
     bar: {
-      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+      display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const,
       padding: '10px 16px', marginBottom: 12,
       background: 'var(--bg)', borderRadius: 'var(--radius)',
       border: 'var(--card-border)',
@@ -192,12 +192,9 @@ export default function Piano() {
           return (
             <motion.div
               key={k.id}
-              style={S.blackKey(active, 0)}
               whileTap={{ scale: 0.95 }}
               onPointerDown={() => playNote(k)}
-              // override left with calc
-              // eslint-disable-next-line
-              {...{ style: { ...S.blackKey(active, 0), left: leftCalc } }}
+              style={{ ...S.blackKey(active, 0), left: leftCalc }}
             >
               <span style={{ ...S.noteName, color: active ? '#000' : '#aaa' }}>{k.hotkey}</span>
             </motion.div>
